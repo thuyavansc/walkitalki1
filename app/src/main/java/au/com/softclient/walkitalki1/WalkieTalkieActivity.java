@@ -942,152 +942,153 @@ import io.reactivex.schedulers.Schedulers;
 //import microsoft.aspnet.signalr.client.SignalRFuture;
 //import microsoft.aspnet.signalr.client.http.android.AndroidPlatformComponent;
 //import microsoft.aspnet.signalr.client.http.android.AndroidLogger;
-
-public class WalkieTalkieActivity extends AppCompatActivity {
-    private static final String TAG = "WalkieTalkieActivity";
-    private static final int PERMISSION_REQUEST_CODE = 123;
-
-    private HubConnection hubConnection;
-    private boolean isTalking = false;
-    private AudioRecord audioRecord;
-    private ExecutorService executorService;
-    private OpusEncoder opusEncoder;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_walkie_talkie);
-
-        executorService = Executors.newSingleThreadExecutor();
-
-        opusEncoder = new OpusEncoder(this);
-
-        // Check for and request the RECORD_AUDIO permission at runtime
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
-            } else {
-                initializeHubConnection();
-            }
-        } else {
-            initializeHubConnection();
-        }
-    }
-
-    private void initializeHubConnection() {
-        hubConnection = HubConnectionBuilder.create("http://192.168.8.168:5120/walkietalkiehub")
-                .build();
-
-        hubConnection.on("ReceiveVoiceData", (data) -> {
-            // Handle received voice data (e.g., play it)
-            Log.i(TAG, "Received voice data, length: " + data.length);
-        }, byte[].class);
-
-        hubConnection.on("ReceiveMessage", (message) -> {
-            // Handle received messages
-            Log.i(TAG, "Received message: " + message);
-        }, String.class);
-
-        // Handle reconnection manually
-        hubConnection.onClosed(exception -> {
-            if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
-                // Reconnect logic
-                hubConnection.start().blockingAwait();
-            }
-        });
-    }
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG, "Permission granted for RECORD_AUDIO");
-                initializeHubConnection();
-                if (opusEncoder != null) {
-                    Log.i(TAG, "OpusEncoder initialized");
-                } else {
-                    Log.e(TAG, "WalkieTalkieActivity-onRequestPermissionsResult: OpusEncoder is null");
-                }
-            } else {
-                Log.e(TAG, "Permission denied for RECORD_AUDIO");
-                // Permission denied, handle accordingly (e.g., show a message to the user)
-            }
-        }
-    }
-
-    public void startListening(View view) {
-        // Implement logic for starting listening
-        // Update UI accordingly
-    }
-
-    public void startTalking(View view) {
-        if (!isTalking) {
-            startAudioRecording();
-            isTalking = true;
-            ((Button) view).setText("Stop");
-
-            // Send a message to the server that the client started talking
-            hubConnection.send("SendMessage", "Client started talking!");
-        } else {
-            stopAudioRecording();
-            isTalking = false;
-            ((Button) view).setText("Talk");
-
-            // Send a message to the server that the client stopped talking
-            hubConnection.send("SendMessage", "Client stopped talking");
-        }
-    }
-
-    private void startAudioRecording() {
-        int bufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(TAG, "RECORD_AUDIO permission not granted");
-            return;
-        }
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, 16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
-
-        audioRecord.startRecording();
-
-        executorService.execute(() -> {
-            byte[] buffer = new byte[bufferSize];
-
-            while (isTalking) {
-                int bytesRead = audioRecord.read(buffer, 0, bufferSize);
-                if (bytesRead > 0) {
-                    if (opusEncoder != null) {
-                        byte[] encodedData = opusEncoder.encode(); // Use OpusEncoder for encoding
-                        hubConnection.send("SendVoiceData", encodedData);
-                    } else {
-                        Log.e(TAG, "WalkieTalkieActivity-startAudioRecording: OpusEncoder is null");
-                    }
-                }
-            }
-
-            audioRecord.stop();
-            audioRecord.release();
-        });
-    }
-
-    private void stopAudioRecording() {
-        isTalking = false;
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
-            hubConnection.start().blockingAwait();
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
-            hubConnection.stop();
-        }
-    }
-}
+import com.theeasiestway.opus.Opus;
+//
+//public class WalkieTalkieActivity extends AppCompatActivity {
+//    private static final String TAG = "WalkieTalkieActivity";
+//    private static final int PERMISSION_REQUEST_CODE = 123;
+//
+//    private HubConnection hubConnection;
+//    private boolean isTalking = false;
+//    private AudioRecord audioRecord;
+//    private ExecutorService executorService;
+//    private OpusEncoder opusEncoder;
+//
+//    @Override
+//    protected void onCreate(Bundle savedInstanceState) {
+//        super.onCreate(savedInstanceState);
+//        setContentView(R.layout.activity_walkie_talkie);
+//
+//        executorService = Executors.newSingleThreadExecutor();
+//
+//        opusEncoder = new OpusEncoder(this);
+//
+//        // Check for and request the RECORD_AUDIO permission at runtime
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+//                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+//            } else {
+//                initializeHubConnection();
+//            }
+//        } else {
+//            initializeHubConnection();
+//        }
+//    }
+//
+//    private void initializeHubConnection() {
+//        hubConnection = HubConnectionBuilder.create("http://192.168.8.168:5120/walkietalkiehub")
+//                .build();
+//
+//        hubConnection.on("ReceiveVoiceData", (data) -> {
+//            // Handle received voice data (e.g., play it)
+//            Log.i(TAG, "Received voice data, length: " + data.length);
+//        }, byte[].class);
+//
+//        hubConnection.on("ReceiveMessage", (message) -> {
+//            // Handle received messages
+//            Log.i(TAG, "Received message: " + message);
+//        }, String.class);
+//
+//        // Handle reconnection manually
+//        hubConnection.onClosed(exception -> {
+//            if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
+//                // Reconnect logic
+//                hubConnection.start().blockingAwait();
+//            }
+//        });
+//    }
+//
+//
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//
+//        if (requestCode == PERMISSION_REQUEST_CODE) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                Log.i(TAG, "Permission granted for RECORD_AUDIO");
+//                initializeHubConnection();
+//                if (opusEncoder != null) {
+//                    Log.i(TAG, "OpusEncoder initialized");
+//                } else {
+//                    Log.e(TAG, "WalkieTalkieActivity-onRequestPermissionsResult: OpusEncoder is null");
+//                }
+//            } else {
+//                Log.e(TAG, "Permission denied for RECORD_AUDIO");
+//                // Permission denied, handle accordingly (e.g., show a message to the user)
+//            }
+//        }
+//    }
+//
+//    public void startListening(View view) {
+//        // Implement logic for starting listening
+//        // Update UI accordingly
+//    }
+//
+//    public void startTalking(View view) {
+//        if (!isTalking) {
+//            startAudioRecording();
+//            isTalking = true;
+//            ((Button) view).setText("Stop");
+//
+//            // Send a message to the server that the client started talking
+//            hubConnection.send("SendMessage", "Client started talking!");
+//        } else {
+//            stopAudioRecording();
+//            isTalking = false;
+//            ((Button) view).setText("Talk");
+//
+//            // Send a message to the server that the client stopped talking
+//            hubConnection.send("SendMessage", "Client stopped talking");
+//        }
+//    }
+//
+//    private void startAudioRecording() {
+//        int bufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+//            Log.e(TAG, "RECORD_AUDIO permission not granted");
+//            return;
+//        }
+//        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, 16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
+//
+//        audioRecord.startRecording();
+//
+//        executorService.execute(() -> {
+//            byte[] buffer = new byte[bufferSize];
+//
+//            while (isTalking) {
+//                int bytesRead = audioRecord.read(buffer, 0, bufferSize);
+//                if (bytesRead > 0) {
+//                    if (opusEncoder != null) {
+//                        byte[] encodedData = opusEncoder.encode(); // Use OpusEncoder for encoding
+//                        hubConnection.send("SendVoiceData", encodedData);
+//                    } else {
+//                        Log.e(TAG, "WalkieTalkieActivity-startAudioRecording: OpusEncoder is null");
+//                    }
+//                }
+//            }
+//
+//            audioRecord.stop();
+//            audioRecord.release();
+//        });
+//    }
+//
+//    private void stopAudioRecording() {
+//        isTalking = false;
+//    }
+//
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        if (hubConnection.getConnectionState() == HubConnectionState.DISCONNECTED) {
+//            hubConnection.start().blockingAwait();
+//        }
+//    }
+//
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        if (hubConnection.getConnectionState() == HubConnectionState.CONNECTED) {
+//            hubConnection.stop();
+//        }
+//    }
+//}

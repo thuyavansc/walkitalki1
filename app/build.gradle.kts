@@ -33,9 +33,20 @@ android {
 
 dependencies {
 
+//    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar']) // Include AAR files in the libs folder
+
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+    //implementation((name: "opus", ext: "aar") // Include Opus AAR file
+    //api files('libs/opus.aar')
+
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+//    implementation(fileTree(mapOf(
+//        "dir" to "F:\\CampusNotes\\OnlineCourse\\AndroidProject\\Learn\\WalkiTalki1\\app\\libs",
+//        "include" to listOf("*.aar", "*.jar"),
+//        "exclude" to listOf()
+//    )))
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -87,9 +98,17 @@ dependencies {
 
     //implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
 
-    implementation("club.minnced:opus-java:1.1.1")
+//    implementation("club.minnced:opus-java:1.1.1")
+//    implementation ("de.maxhenkel.opus4j:opus4j:2.0.2")
+//    implementation ("net.java.dev.jna:jna:5.10.0")
+//
+//    //implementation ("com.tianscar.javasound:javasound-opus:1.2.1")
+//    //implementation ("com.github.martoreto:opuscodec:v1.2.1.2")
 
+
+    //implementation (project(":Opus")) // Replace with the actual library module name
 
 
 
 }
+

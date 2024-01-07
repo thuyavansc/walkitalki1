@@ -29,9 +29,15 @@ public class MainActivity2 extends AppCompatActivity {
         Button buttonWT = findViewById(R.id.btnWT);
         buttonWT.setOnClickListener(new View.OnClickListener() {
             @Override
+//            public void onClick(View view) {
+//                // When the button is clicked, start Activity2
+//                Intent intent = new Intent(MainActivity2.this, WalkieTalkieActivity.class);
+//                startActivity(intent);
+//            }
+
             public void onClick(View view) {
                 // When the button is clicked, start Activity2
-                Intent intent = new Intent(MainActivity2.this, WalkieTalkieActivity.class);
+                Intent intent = new Intent(MainActivity2.this, MainActivity3.class);
                 startActivity(intent);
             }
         });
